@@ -1,0 +1,14 @@
+{
+  "name": "command-k-chrome-extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A command bar for Chrome, Brave and other Chromium browsers.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "e2e": "node dev/e2e.mjs",
+    "dev": "python3 -m http.server 4173 --bind 127.0.0.1",
+    "icons": "for s in 16 32 48 128; do rsvg-convert -w $s -h $s icons/icon.svg -o icons/icon$s.png; done"
+  }
+}

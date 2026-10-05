@@ -1,0 +1,98 @@
+<!doctype html>
+<!-- a stand-in web page that runs the real content script against the mock. add ?theme=dark or ?page=dark to try themes. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>How we ship: a field guide to release trains</title>
+    <style>
+      body {
+        margin: 0;
+        font: 17px/1.65 Georgia, 'Times New Roman', serif;
+        color: #23211e;
+        background: #f6f3ee;
+      }
+      body.dark {
+        color: #e6e2da;
+        background: #15161a;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 18px 40px;
+        border-bottom: 1px solid rgba(128, 128, 128, 0.25);
+        font: 600 14px/1 -apple-system, system-ui, sans-serif;
+      }
+      button {
+        font: inherit;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(128, 128, 128, 0.4);
+        background: transparent;
+        color: inherit;
+      }
+      main {
+        max-width: 660px;
+        margin: 56px auto;
+        padding: 0 24px;
+      }
+      h1 {
+        font-size: 40px;
+        line-height: 1.15;
+        margin: 0 0 12px;
+      }
+      .byline {
+        color: #8a857c;
+        font: 14px/1 -apple-system, system-ui, sans-serif;
+        margin-bottom: 36px;
+      }
+      .hero {
+        height: 220px;
+        border-radius: 14px;
+        margin: 28px 0;
+        background: linear-gradient(120deg, #e7b98a, #c9695c 45%, #5b5ea6);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span>The Release Train</span>
+      <button id="open">Open command bar (⌘K)</button>
+    </header>
+    <main>
+      <h1>How we ship: a field guide to release trains</h1>
+      <div class="byline">12 minute read</div>
+      <p>
+        Every team eventually builds a ritual around shipping. Ours started as a checklist taped to a monitor and grew into
+        a weekly train with a conductor, a manifest and a hard departure time.
+      </p>
+      <div class="hero"></div>
+      <p>
+        The train leaves on Tuesdays. Anything merged by Monday evening is on it. Anything else waits a week, and that wait
+        is the whole point: it turns a negotiation into a schedule.
+      </p>
+      <p>
+        We keep the manifest boring. Each entry names the change, the owner and the rollback. If the rollback is "revert
+        the commit", we write that down too, because the 2am version of you will want it spelled out.
+      </p>
+      <p>
+        The conductor rotates. They own the departure, not the cargo. When something is not ready they do not argue about
+        it, they move it to next week's manifest and the train still leaves on time.
+      </p>
+    </main>
+    <script src="mock-chrome.js"></script>
+    <script src="../content.js"></script>
+    <script>
+      if (new URLSearchParams(location.search).get('page') === 'dark') document.body.classList.add('dark');
+      document.getElementById('open').addEventListener('click', () => chrome.__toggle());
+      addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+          e.preventDefault();
+          chrome.__toggle();
+        }
+      });
+      if (new URLSearchParams(location.search).has('open')) chrome.__toggle();
+    </script>
+  </body>
+</html>

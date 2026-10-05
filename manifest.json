@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "Command K",
+  "short_name": "Command K",
+  "version": "0.1.0",
+  "description": "A command bar for your browser. Switch tabs, search history and bookmarks, and run tab actions from the keyboard.",
+  "minimum_chrome_version": "121",
+  "incognito": "split",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "tabs",
+    "tabGroups",
+    "history",
+    "bookmarks",
+    "sessions",
+    "favicon",
+    "search",
+    "storage",
+    "clipboardWrite"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Command K",
+    "default_popup": "palette.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
+  },
+  "commands": {
+    "toggle-palette": {
+      "suggested_key": {
+        "default": "Ctrl+K",
+        "mac": "Command+K"
+      },
+      "description": "Open the command bar"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["palette.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
