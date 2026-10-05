@@ -30,8 +30,12 @@ async function findCurrent(hintTabId) {
   // set when running as the overlay iframe inside a tab
   const own = await safe(() => chrome.tabs.getCurrent());
   if (own && !own.url?.startsWith(SELF)) return own;
-  const [active] = await safe(() => chrome.tabs.query({ active: true, currentWindow: true }), []);
-  return active || null;
+  // "current window" is unreliable from a popup when several windows are open
+  for (const where of [{ currentWindow: true }, { lastFocusedWindow: true }]) {
+    const [active] = await safe(() => chrome.tabs.query({ active: true, ...where }), []);
+    if (active && !active.url?.startsWith(SELF)) return active;
+  }
+  return null;
 }
 
 /** Open tabs, most recently used first, with the current tab last. */

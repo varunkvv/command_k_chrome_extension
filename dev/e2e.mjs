@@ -293,6 +293,10 @@ try {
     const rows = await waitFor(() => fb.eval(`document.querySelectorAll('.row').length`));
     const mode = await fb.eval(`document.getElementById('app').dataset.mode`);
     check('fallback surface lists tabs', rows > 0, `${rows} rows, mode=${mode}`);
+    const cur = await fb.eval(`[...document.querySelectorAll('.row')].filter(r => r.querySelector('.note')?.textContent === 'Current').map(r => r.querySelector('.sub').textContent).join()`);
+    check('fallback knows which tab it was opened on', cur === 'chrome://version', cur);
+    const popupLeft = await sw.eval(`chrome.tabs.query({}).then(ts => chrome.action.getPopup({tabId: ts.find(t => t.url.startsWith('chrome://version')).id}))`);
+    check('popup is cleared again so the icon keeps opening the overlay', popupLeft === '', popupLeft);
     await shot(fb, 'e2e-6-fallback.png').catch((e) => console.log('no fallback screenshot:', e.message));
     fb.close();
   }

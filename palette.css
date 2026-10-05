@@ -134,7 +134,6 @@ html:has([data-mode='window']) body {
   max-height: none;
   border-radius: 0;
   box-shadow: none;
-  transition: none;
 }
 
 /* input */
@@ -255,6 +254,7 @@ html:has([data-mode='window']) body {
   height: 40px;
   padding: 0 10px;
   border-radius: 9px;
+  transition: background-color 70ms ease-out;
 }
 
 .row[aria-selected='true'] {
@@ -455,6 +455,9 @@ mark {
   border-radius: 7px;
   color: var(--fg-3);
   font: 500 12px/1 var(--font);
+  transition:
+    background-color 100ms ease-out,
+    color 100ms ease-out;
 }
 
 .scopes button:hover {
@@ -495,6 +498,8 @@ mark {
   .scrim,
   .panel,
   .open .panel,
+  .row,
+  .scopes button,
   .toast {
     transition: none;
     animation: none;

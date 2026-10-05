@@ -16,7 +16,9 @@ it isn't on the chrome web store, so load it unpacked.
 
 the shortcut is `cmd+k` on mac and `ctrl+k` everywhere else. if another extension already has it the browser leaves it unset, and on windows / linux `ctrl+k` is also chrome's own search shortcut. either way you can set it at `chrome://extensions/shortcuts`.
 
-tabs that were open before you installed it work right away, no reload needed.
+tabs that were open before you installed it work right away, no reload needed. clicking the toolbar icon does the same thing as the shortcut.
+
+try it on a regular page first. `chrome://extensions`, where you just were, is one of the pages where it can't draw the centered bar (see limits).
 
 ## features
 
@@ -96,7 +98,7 @@ after editing, hit reload on the extension card in `chrome://extensions`.
 
 ## limits
 
-- browsers don't let extensions draw on `chrome://` pages, the new tab page or the web store. there the shortcut opens the same bar as the toolbar popup instead of an overlay
+- browsers don't let extensions draw on `chrome://` pages, the new tab page or the web store. there the same bar opens as a popup under the toolbar icon. chrome decides that popup's position and shape, so it can't be centered or rounded
 - firefox and safari aren't supported. it uses chromium-only apis (`tabGroups`, `sessions`, `_favicon`)
 - history search covers the 2,500 most recent pages with fuzzy matching, and falls back to the browser's own word matching for older ones
 

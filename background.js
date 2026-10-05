@@ -1,12 +1,16 @@
-// Opens the command bar. The preferred surface is an overlay injected into the
-// active tab. Pages that can't be scripted (chrome://, the web store, the new
-// tab page) fall back to the toolbar popup, then to a small standalone window.
+// Opens the command bar from the shortcut or the toolbar icon. The preferred
+// surface is an overlay injected into the active tab. Pages that can't be
+// scripted (chrome://, the web store, the new tab page) fall back to the
+// toolbar popup, then to a small standalone window.
 
 const surfaces = new Set();
 
 chrome.commands.onCommand.addListener((command, tab) => {
   if (command === 'toggle-palette') toggle(tab);
 });
+
+// no default popup, so a click on the icon lands here and gets the overlay too
+chrome.action.onClicked.addListener((tab) => toggle(tab));
 
 chrome.runtime.onConnect.addListener((port) => {
   if (port.name !== 'cmdk-surface') return;
@@ -56,11 +60,16 @@ async function toggleInTab(tabId) {
 }
 
 async function openFallback(tab) {
+  // the popup is set only for the moment it opens, and told which tab it is for
+  const scope = tab?.id != null ? { tabId: tab.id } : {};
   try {
-    await chrome.action.openPopup();
+    await chrome.action.setPopup({ ...scope, popup: `palette.html?tab=${tab?.id ?? ''}` });
+    await chrome.action.openPopup(tab ? { windowId: tab.windowId } : undefined);
     return;
   } catch {
     // no focused window, or the popup is unavailable here
+  } finally {
+    await chrome.action.setPopup({ ...scope, popup: '' }).catch(() => {});
   }
   const width = 680;
   const height = 480;
