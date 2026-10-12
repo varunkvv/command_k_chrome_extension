@@ -25,6 +25,9 @@
     "storage",
     "clipboardWrite"
   ],
+  "optional_host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -35,6 +38,10 @@
       "16": "icons/icon16.png",
       "32": "icons/icon32.png"
     }
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
   },
   "commands": {
     "toggle-palette": {

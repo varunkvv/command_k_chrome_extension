@@ -108,7 +108,7 @@ const ACTIONS = [
   { id: 'open-bookmarks', title: 'Open bookmark manager', icon: 'star', run: open('chrome://bookmarks') },
   { id: 'open-extensions', title: 'Open extensions', icon: 'blocks', keywords: 'addons plugins', run: open('chrome://extensions') },
   { id: 'open-settings', title: 'Open browser settings', icon: 'sliders', keywords: 'preferences', run: open('chrome://settings') },
-  { id: 'shortcut', title: 'Change the Command K shortcut', icon: 'keyboard', keywords: 'keybinding hotkey', run: open('chrome://extensions/shortcuts') },
+  { id: 'shortcut', title: 'Change the Command K shortcut', icon: 'keyboard', keywords: 'keybinding hotkey settings options', run: () => chrome.runtime.openOptionsPage() },
   { id: 'theme', title: ({ theme }) => `Switch theme (now ${theme})`, icon: 'theme', keywords: 'dark light appearance mode', stay: true, run: ({ cycleTheme }) => cycleTheme() },
 ];
 

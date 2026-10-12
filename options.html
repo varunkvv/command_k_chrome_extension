@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="color-scheme" content="light" />
+    <title>Command K settings</title>
+    <link rel="icon" href="icons/icon32.png" />
+    <link rel="stylesheet" href="theme.css" />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <img src="icons/icon48.png" alt="" width="28" height="28" />
+        <h1>Command K</h1>
+      </header>
+      <div class="card">
+        <section>
+          <h2>Shortcut</h2>
+          <p>Pick the keys that open and close the bar.</p>
+          <button id="recorder" class="recorder" type="button" aria-describedby="status"></button>
+          <div class="under">
+            <p id="status" class="status" role="status"></p>
+            <button id="remove" class="btn quiet" type="button" hidden>Remove</button>
+            <button id="cancel" class="btn" type="button" hidden>Cancel</button>
+            <button id="save" class="btn primary" type="button" hidden>Save</button>
+          </div>
+        </section>
+        <section class="split">
+          <div>
+            <h2>Browser shortcut</h2>
+            <p>Kept by the browser, so it also works on new tabs and settings pages, where an extension can't listen for keys. Only the browser can change it.</p>
+          </div>
+          <kbd id="browser-keys" class="kbd"></kbd>
+          <button id="browser-change" class="btn" type="button">Change</button>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="src/options.js"></script>
+  </body>
+</html>

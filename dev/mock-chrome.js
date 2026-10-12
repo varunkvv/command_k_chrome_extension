@@ -169,10 +169,12 @@
       },
       connect: () => ({ onMessage: event(), postMessage() {} }),
       sendMessage: async (msg) => log('runtime.sendMessage', msg),
+      openOptionsPage: call('runtime.openOptionsPage'),
       onMessage,
     },
     extension: { inIncognitoContext: false },
     storage: {
+      onChanged: event(),
       local: { get: async (keys) => pick(local, keys), set: async (v) => Object.assign(local, v) },
       session: { get: async (keys) => pick(session, keys), set: async (v) => Object.assign(session, v) },
     },

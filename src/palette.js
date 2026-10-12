@@ -4,6 +4,7 @@ import { search, normalizeUrl, SCOPES } from './search.js';
 import { loadContext, loadClosed, loadBookmarks, loadHistory, searchHistory, faviconUrl, isBlankTab } from './sources.js';
 import { buildActions, findAction } from './actions.js';
 import { icon } from './icons.js';
+import { matches } from './shortcut.js';
 
 const embedded = window.parent !== window;
 const params = new URLSearchParams(location.search);
@@ -53,6 +54,7 @@ const state = {
   data: {},
   usage: {},
   theme: 'auto',
+  shortcut: null,
   osDark: false,
   seq: 0,
 };
@@ -333,6 +335,12 @@ function scheduleDeepHistory() {
 
 function onKey(e) {
   if (e.isComposing) return;
+  // the page's key listener can't hear the custom shortcut while focus is in here
+  if (matches(state.shortcut, e)) {
+    e.preventDefault();
+    if (!e.repeat) close();
+    return;
+  }
   const mod = isMac ? e.metaKey : e.ctrlKey;
   const emacs = isMac && e.ctrlKey && !e.metaKey && !e.altKey;
   const noSelection = input.selectionStart === input.selectionEnd;
@@ -585,9 +593,14 @@ async function boot() {
     if (!token || location.hash.slice(1) !== token) return;
   }
   build();
-  const stored = await chrome.storage.local.get(['usage', 'theme']);
+  const stored = await chrome.storage.local.get(['usage', 'theme', 'shortcut']);
   state.usage = stored.usage || {};
   state.theme = THEMES.includes(stored.theme) ? stored.theme : 'auto';
+  state.shortcut = stored.shortcut;
+  // the overlay frame outlives a visit to the settings page
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.shortcut) state.shortcut = changes.shortcut.newValue;
+  });
 
   if (embedded) {
     window.addEventListener('message', (e) => {

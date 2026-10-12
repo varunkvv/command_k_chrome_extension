@@ -4,6 +4,16 @@
 // toolbar popup, then to a small standalone window.
 
 const surfaces = new Set();
+const ALL_SITES = { origins: ['<all_urls>'] };
+const HOTKEY = {
+  id: 'cmdk-hotkey',
+  js: ['hotkey.js'],
+  matches: ['<all_urls>'],
+  allFrames: true,
+  matchOriginAsFallback: true,
+  runAt: 'document_start',
+};
+let syncing = Promise.resolve();
 
 chrome.commands.onCommand.addListener((command, tab) => {
   if (command === 'toggle-palette') toggle(tab);
@@ -20,7 +30,42 @@ chrome.runtime.onConnect.addListener((port) => {
 
 chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg?.type === 'cmdk:fallback') openFallback(sender.tab);
+  else if (msg?.type === 'cmdk:hotkey') toggle(sender.tab);
 });
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === 'local' && changes.shortcut) syncHotkey();
+});
+chrome.permissions.onAdded.addListener(() => syncHotkey());
+chrome.permissions.onRemoved.addListener(() => syncHotkey());
+// an update orphans the copies already running in open tabs
+chrome.runtime.onInstalled.addListener(() => syncHotkey({ reinject: true }));
+syncHotkey();
+
+// The browser won't let an extension rebind its own command, so a custom
+// shortcut is a key listener on every page. It is registered only while a
+// shortcut is set and the user has granted access to all sites for it.
+function syncHotkey({ reinject = false } = {}) {
+  // one at a time, the events above arrive in bursts
+  syncing = syncing
+    .then(async () => {
+      const { shortcut } = await chrome.storage.local.get('shortcut');
+      const wanted = !!shortcut && (await chrome.permissions.contains(ALL_SITES));
+      const [registered] = await chrome.scripting.getRegisteredContentScripts({ ids: [HOTKEY.id] });
+      if (!wanted) {
+        if (registered) await chrome.scripting.unregisterContentScripts({ ids: [HOTKEY.id] });
+        return;
+      }
+      if (!registered) await chrome.scripting.registerContentScripts([HOTKEY]);
+      else if (!reinject) return;
+      // a registered script only reaches pages loaded from now on
+      for (const tab of await chrome.tabs.query({})) {
+        chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: HOTKEY.js }).catch(() => {});
+      }
+    })
+    .catch((err) => console.warn('[command k]', err));
+  return syncing;
+}
 
 // The overlay iframe is web accessible, so any page could embed it. It only
 // renders when handed this per-session token, which pages never see.

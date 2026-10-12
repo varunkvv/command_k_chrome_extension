@@ -1,0 +1,262 @@
+/* The settings page. Tokens and .kbd come from theme.css. */
+:root {
+  --cap: #ffffff;
+  --lip: rgba(0, 0, 0, 0.16);
+  --bad: #c0392f;
+}
+
+:root[data-theme='dark'] {
+  --cap: #2b2b31;
+  --lip: rgba(0, 0, 0, 0.55);
+  --bad: #ff8f85;
+}
+
+html {
+  background: var(--bg-foot);
+}
+
+body {
+  margin: 0;
+  padding: min(14vh, 120px) 20px 48px;
+  color: var(--fg);
+  font: 400 14px/1.5 var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 4px 18px;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font: 600 18px/1.2 var(--font);
+  letter-spacing: -0.015em;
+}
+
+h2 {
+  font: 600 14px/1.4 var(--font);
+  letter-spacing: -0.005em;
+}
+
+p {
+  color: var(--fg-2);
+  font-size: 13px;
+}
+
+.card {
+  overflow: hidden;
+  background: var(--bg);
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 12px 32px -18px rgba(0, 0, 0, 0.22);
+}
+
+section {
+  padding: 20px;
+}
+
+section + section {
+  border-top: 1px solid var(--line);
+}
+
+/* recorder */
+
+.recorder {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 88px;
+  margin-top: 16px;
+  border-radius: 12px;
+  background: var(--bg-foot);
+  box-shadow: inset 0 0 0 1px var(--line);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+.recorder:hover {
+  box-shadow: inset 0 0 0 1px var(--thumb);
+}
+
+.recorder:focus-visible,
+.recorder[data-state='draft'] {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.recorder[data-state='recording'] {
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg));
+  box-shadow:
+    inset 0 0 0 1.5px var(--accent),
+    0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.cap {
+  display: inline-grid;
+  place-items: center;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 13px;
+  border-radius: 10px;
+  background: var(--cap);
+  color: var(--fg);
+  font: 600 16px/1 var(--font);
+  /* the lip under it is what makes it read as a key */
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 2px 0 0 var(--lip);
+}
+
+.cap.blank {
+  background: transparent;
+  box-shadow: none;
+  border: 1.5px dashed color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--fg-3);
+  font: 500 14px/1 var(--font);
+}
+
+.recorder[data-state='recording'] .ghost {
+  color: var(--accent);
+}
+
+.recorder[data-state='recording'] .ghost::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.under {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  margin-top: 12px;
+}
+
+.status {
+  flex: 1;
+  min-width: 0;
+  padding-right: 4px;
+  color: var(--fg-3);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.status[data-tone='bad'] {
+  color: var(--bad);
+}
+
+.btn {
+  all: unset;
+  box-sizing: border-box;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: var(--chip);
+  color: var(--fg);
+  font: 500 13px/1 var(--font);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: filter 100ms ease-out;
+}
+
+.btn:hover {
+  filter: brightness(0.94);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* --bg flips with the theme, so the label stays readable on either accent */
+.btn.primary {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.btn.quiet {
+  background: transparent;
+  color: var(--fg-2);
+}
+
+.btn.quiet:hover {
+  background: var(--chip);
+  filter: none;
+}
+
+/* browser shortcut */
+
+.split {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.split > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.split p {
+  margin-top: 2px;
+}
+
+.split .kbd {
+  flex: none;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recorder,
+  .btn {
+    transition: none;
+  }
+
+  .recorder[data-state='recording'] .ghost::before {
+    animation: none;
+  }
+}
