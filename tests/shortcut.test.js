@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fromEvent, isValid, matches, keycaps } from '../src/shortcut.js';
+import { fromEvent, isValid, matches, keycaps, defaultShortcut, same } from '../src/shortcut.js';
 
 const key = (code, k, mods = {}) => ({ code, key: k, ctrlKey: false, metaKey: false, altKey: false, shiftKey: false, ...mods });
 
@@ -49,6 +49,19 @@ test('matches only the exact combo', () => {
   assert.ok(!matches(saved, key('KeyK', '', { altKey: true, shiftKey: true })));
   assert.ok(!matches(saved, key('KeyJ', '∆', { altKey: true })));
   assert.ok(!matches(undefined, key('KeyK', 'k', { altKey: true })));
+});
+
+test('defaults to cmd+k on mac and ctrl+k elsewhere', () => {
+  assert.deepEqual(keycaps(defaultShortcut(true), true), ['⌘', 'K']);
+  assert.deepEqual(keycaps(defaultShortcut(false), false), ['Ctrl', 'K']);
+  assert.ok(matches(defaultShortcut(true), key('KeyK', 'k', { metaKey: true })));
+  assert.ok(isValid(defaultShortcut(false)));
+});
+
+test('recording the default again is the same shortcut', () => {
+  assert.ok(same(fromEvent(key('KeyK', 'k', { metaKey: true })), defaultShortcut(true)));
+  assert.ok(!same(fromEvent(key('KeyK', 'k', { metaKey: true, shiftKey: true })), defaultShortcut(true)));
+  assert.ok(!same(defaultShortcut(true), defaultShortcut(false)));
 });
 
 test('writes modifiers the way the platform does', () => {

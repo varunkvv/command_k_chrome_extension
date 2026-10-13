@@ -14,11 +14,11 @@ it isn't on the chrome web store, so load it unpacked.
 2. open `chrome://extensions` (`brave://extensions` in brave) and turn on developer mode
 3. click "load unpacked" and pick the cloned folder
 
-the shortcut is `cmd+k` on mac and `ctrl+k` everywhere else. if another extension already has it the browser leaves it unset, and on windows / linux `ctrl+k` is also chrome's own search shortcut. either way you can change it, see [changing the shortcut](#changing-the-shortcut).
+the shortcut is `cmd+k` on mac and `ctrl+k` everywhere else. you can change it, see [changing the shortcut](#changing-the-shortcut).
 
 tabs that were open before you installed it work right away, no reload needed. clicking the toolbar icon does the same thing as the shortcut.
 
-try it on a regular page first. `chrome://extensions`, where you just were, is one of the pages where it can't draw the centered bar (see limits).
+try it on a regular page first. `chrome://extensions`, where you just were, is one of the pages where the shortcut can't be heard (see limits). the toolbar icon works there.
 
 ## features
 
@@ -51,23 +51,23 @@ if the url you pick is already open, `enter` switches to that tab instead of ope
 
 ## changing the shortcut
 
-run "change the command k shortcut" from the bar, or open the extension's options. click the recorder, press the keys you want and save.
+run "change the command k shortcut" from the bar, or open the extension's options. click the recorder, press the keys you want and save. the new keys replace the old ones, and "reset to default" goes back to `cmd+k` / `ctrl+k`.
 
-chrome doesn't let an extension rebind its own shortcut, so the one you record is a second shortcut next to the browser's. the extension listens for it on the page, and for that chrome asks you to allow access to all sites when you save. removing the shortcut gives that access back.
+the extension listens for the shortcut on the page itself. chrome has its own shortcuts for extensions, but an extension can't change those, so a setting like this couldn't be built on them.
 
-keep in mind - a page listener can't hear keys on `chrome://` pages, the new tab page or while the address bar has focus. the browser's shortcut works everywhere, and the same settings page links to `chrome://extensions/shortcuts` where you can change or clear it.
+keep in mind - a page can't hear keys on `chrome://` pages, the new tab page or while the address bar has focus. if you want the bar there too, set a browser shortcut at `chrome://extensions/shortcuts` (the settings page links to it). it can be the same keys.
 
 ## permissions
 
 | permission | why |
 | --- | --- |
-| `activeTab`, `scripting` | show the bar on the page you're on when you press the shortcut. by default nothing runs on a page until you open the bar there |
-| `<all_urls>` (optional) | only asked for when you save a custom shortcut, so a small script can listen for that key on every page. off by default |
+| `<all_urls>` | `hotkey.js` runs on every page to listen for the shortcut. it compares keydowns to your keys and reads nothing from the page |
+| `activeTab`, `scripting` | show the bar on the page you're on. the bar itself isn't added to a page until you open it there |
 | `tabs`, `tabGroups` | list, switch, close and group tabs |
 | `history`, `bookmarks`, `sessions` | search them, and reopen closed tabs |
 | `favicon` | icons from the browser's local favicon cache |
 | `search` | hand a query to your default search engine |
-| `storage` | theme, your custom shortcut, and how often you've picked a result |
+| `storage` | theme, your shortcut, and how often you've picked a result |
 | `clipboardWrite` | the copy url actions |
 
 nothing leaves your machine. there are no network requests, no analytics and no remote code.
@@ -76,11 +76,9 @@ in incognito (if you allow it there) the bar only sees incognito tabs, and nothi
 
 ## how it works
 
-`background.js` listens for the shortcut and injects `content.js` into the active tab. the content script adds one element in the top layer holding an iframe that points at `palette.html`.
+`hotkey.js` runs on every page and listens for the shortcut. when it fires, `background.js` injects `content.js` into that tab. the content script adds one element in the top layer holding an iframe that points at `palette.html`.
 
 the iframe is an extension page, which is why it's built this way. page css can't restyle it, a strict content security policy can't block it, and page key handlers never see what you type. it also means the same page works as the toolbar popup.
-
-a custom shortcut is the one case where something runs before you open the bar. while one is set, `background.js` registers `hotkey.js` on every page. it compares each keydown to the saved keys and messages the background on a match.
 
 ranking is in `src/search.js` and `src/fuzzy.js`. both are plain functions with no browser dependencies.
 
@@ -104,13 +102,13 @@ serves the repo on http://127.0.0.1:4173. open `/dev/page.html` to try the bar a
 CHROME_BIN=/path/to/chromium npm run e2e
 ```
 
-loads the real extension in headless chrome and checks the overlay, search, tab switching, a strict csp page, the custom shortcut and the popup fallback. it needs chrome for testing or chromium, because branded chrome ignores `--load-extension`.
+loads the real extension in headless chrome and checks the overlay, search, tab switching, a strict csp page, the shortcut setting and the popup fallback. it needs chrome for testing or chromium, because branded chrome ignores `--load-extension`.
 
 after editing, hit reload on the extension card in `chrome://extensions`.
 
 ## limits
 
-- browsers don't let extensions draw on `chrome://` pages, the new tab page or the web store. there the same bar opens as a popup under the toolbar icon. chrome decides that popup's position and shape, so it can't be centered or rounded
+- browsers don't let extensions run on `chrome://` pages, the new tab page or the web store. the shortcut isn't heard there unless you also set one in the browser (see changing the shortcut), and the bar opens as a popup under the toolbar icon. chrome decides that popup's position and shape, so it can't be centered or rounded
 - firefox and safari aren't supported. it uses chromium-only apis (`tabGroups`, `sessions`, `_favicon`)
 - history search covers the 2,500 most recent pages with fuzzy matching, and falls back to the browser's own word matching for older ones
 

@@ -2,7 +2,7 @@
 // protocol. Run with: CHROME_BIN=/path/to/chromium npm run e2e
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
-import { cpSync, rmSync, readFileSync, writeFileSync, appendFileSync, mkdtempSync } from 'node:fs';
+import { cpSync, rmSync, writeFileSync, appendFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -23,13 +23,10 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? `  (${detail})` : ''}`);
 };
 
-// patched copy: activeTab needs a real key press, so the test grants host access instead
+// patched copy: exposes toggle, which stands in for the toolbar icon and the browser's own shortcut
 const work = mkdtempSync(join(tmpdir(), 'cmdk-e2e-'));
 const ext = join(work, 'ext');
 cpSync(SRC, ext, { recursive: true, filter: (p) => !/\/(\.git|node_modules|docs)(\/|$)/.test(p) });
-const manifest = JSON.parse(readFileSync(join(ext, 'manifest.json'), 'utf8'));
-manifest.host_permissions = ['<all_urls>'];
-writeFileSync(join(ext, 'manifest.json'), JSON.stringify(manifest));
 appendFileSync(join(ext, 'background.js'), '\nglobalThis.__toggle = toggle;\n');
 
 const page = (title, body, extra = '') =>
@@ -282,56 +279,68 @@ try {
   check('page key handlers never see palette keystrokes', leaked === 0, `${leaked} leaked`);
   await press(ho, 'Escape', 'Escape', 27);
 
-  // --- settings page records a custom shortcut, which then toggles the bar
+  // --- the shortcut is heard on the page: cmd+k by default, whatever the settings page records after that
+  const ALT = 1;
+  const MOD = process.platform === 'darwin' ? 4 : 2;
+  const shown = (session) => session.eval(`getComputedStyle(document.querySelector('command-k-root') || document.body).display === 'block'`);
+  const opens = async (session, keys) => {
+    await keys();
+    const ok = !!(await waitFor(() => shown(session), 1500));
+    if (!ok) return false;
+    // let it finish opening, escape is dropped if it lands mid-way
+    await sleep(400);
+    await press(session, 'Escape', 'Escape', 27);
+    await waitFor(async () => !(await shown(session)), 3000);
+    return true;
+  };
+  const cmdK = (session) => () => press(session, 'k', 'KeyK', 75, MOD);
+  const altJ = (session) => () => press(session, 'j', 'KeyJ', 74, ALT);
+  await sw.eval(`chrome.tabs.query({}).then(ts => chrome.tabs.update(ts.find(t => t.url === '${base}/one').id, {active: true})).then(() => 1)`);
+  await pg.send('Page.bringToFront');
+  await sleep(300);
+  await cmdK(pg)();
+  check('default shortcut opens the bar', !!(await waitFor(() => shown(pg), 3000)));
+  await sleep(400);
+  // focus is inside the bar now, so this one is handled by the palette itself
+  await cmdK(pg)();
+  check('and closes it again', !!(await waitFor(async () => !(await shown(pg)), 3000)));
+
   await sw.eval(`chrome.tabs.create({url: chrome.runtime.getURL('options.html'), active: true}).then(() => 1)`);
   const optTarget = await findTarget((t) => t.type === 'page' && t.url === `chrome-extension://${extId}/options.html`);
   const op = new Session(optTarget.webSocketDebuggerUrl);
   await op.send('Page.bringToFront');
   const recorder = () => op.eval(`(() => { const r = document.getElementById('recorder'); return r.dataset.state + ':' + [...r.querySelectorAll('.cap')].map(c => c.textContent).join('+'); })()`);
-  // permissions.request wants a user gesture
-  const click = (id) => op.send('Runtime.evaluate', { expression: `document.getElementById('${id}').click()`, userGesture: true });
-  const ALT = 1;
-  await waitFor(async () => (await recorder()) === 'empty:');
+  const stored = () => sw.eval(`chrome.storage.local.get('shortcut').then(s => s.shortcut?.code || '')`);
+  check('settings page starts on the default', !!(await waitFor(async () => /^saved:(⌘|Ctrl)\+K$/.test(await recorder()))), await recorder());
   await op.eval(`document.getElementById('recorder').focus(), document.getElementById('recorder').click(), 1`);
   await press(op, 'j', 'KeyJ', 74);
   check('a bare key is not a shortcut', (await recorder()) === 'recording:', await recorder());
-  await press(op, 'j', 'KeyJ', 74, ALT);
+  await altJ(op)();
   const drafted = await recorder();
   check('records the keys pressed', /^draft:(⌥|Alt)\+J$/.test(drafted), drafted);
   await shot(op, 'e2e-6-settings.png');
-  await click('save');
-  const hotkeyScripts = () => sw.eval(`chrome.scripting.getRegisteredContentScripts().then(s => s.map(x => x.id).join())`);
-  const registered = await waitFor(async () => (await hotkeyScripts()) === 'cmdk-hotkey');
-  const savedKey = await sw.eval(`chrome.storage.local.get('shortcut').then(s => s.shortcut?.code)`);
-  check('saving registers the key listener', !!registered && savedKey === 'KeyJ' && (await recorder()).startsWith('saved:'), `${savedKey}|${await recorder()}`);
+  await op.eval(`document.getElementById('save').click(), 1`);
+  const saved = await waitFor(async () => (await stored()) === 'KeyJ');
+  check('saves the new shortcut', !!saved && (await recorder()).startsWith('saved:'), await recorder());
 
-  const shown = (session) => session.eval(`getComputedStyle(document.querySelector('command-k-root') || document.body).display === 'block'`);
-  await sw.eval(`chrome.tabs.query({}).then(ts => chrome.tabs.update(ts.find(t => t.url === '${base}/one').id, {active: true})).then(() => 1)`);
   await pg.send('Page.bringToFront');
   await sleep(300);
-  await press(pg, 'j', 'KeyJ', 74, ALT);
-  check('shortcut opens the bar on a tab that was already open', !!(await waitFor(() => shown(pg), 3000)));
-  await sleep(400);
-  // focus is inside the bar now, so this one is handled by the palette itself
-  await press(pg, 'j', 'KeyJ', 74, ALT);
-  check('shortcut closes the bar again', !!(await waitFor(async () => !(await shown(pg)), 3000)));
+  check('new shortcut opens the bar on a tab that was already open', await opens(pg, altJ(pg)));
+  check('old shortcut no longer does', !(await opens(pg, cmdK(pg))));
 
   await sw.eval(`chrome.tabs.create({url: '${base}/late', active: true}).then(() => 1)`);
   const lateTarget = await findTarget((t) => t.type === 'page' && t.url === `${base}/late`);
   const lt = new Session(lateTarget.webSocketDebuggerUrl);
   await lt.send('Page.bringToFront');
   await sleep(400);
-  await press(lt, 'j', 'KeyJ', 74, ALT);
-  check('shortcut works on a page loaded afterwards', !!(await waitFor(() => shown(lt), 3000)));
-  await press(lt, 'Escape', 'Escape', 27);
+  check('new shortcut works on a page loaded afterwards', await opens(lt, altJ(lt)));
 
-  await click('remove');
-  const unregistered = await waitFor(async () => (await hotkeyScripts()) === '');
-  check('removing the shortcut unregisters the listener', unregistered !== null && (await recorder()) === 'empty:', await recorder());
+  await op.eval(`document.getElementById('reset').click(), 1`);
+  const cleared = await waitFor(async () => (await stored()) === '');
+  check('reset goes back to the default', cleared !== null && /^saved:(⌘|Ctrl)\+K$/.test(await recorder()), await recorder());
   await sleep(300);
-  await press(lt, 'j', 'KeyJ', 74, ALT);
-  await sleep(500);
-  check('removed shortcut no longer opens the bar', !(await shown(lt)));
+  check('reset shortcut no longer opens the bar', !(await opens(lt, altJ(lt))));
+  check('default opens it again', await opens(lt, cmdK(lt)));
   op.close();
 
   // --- restricted page falls back to popup or window

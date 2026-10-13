@@ -1,5 +1,5 @@
-// The custom shortcut: a key plus modifiers, stored as plain data. Pure
-// functions over event-shaped objects so it runs under node for tests.
+// The shortcut that opens the bar: a key plus modifiers, stored as plain data.
+// Pure functions over event-shaped objects so it runs under node for tests.
 
 const MODIFIER_KEYS = new Set(['Control', 'Meta', 'Alt', 'AltGraph', 'Shift', 'CapsLock', 'Fn', 'OS']);
 const MAC = [['ctrl', '⌃'], ['alt', '⌥'], ['shift', '⇧'], ['meta', '⌘']];
@@ -34,6 +34,13 @@ function label(e) {
   if (/^[a-z0-9]$/i.test(e.key)) return e.key.toUpperCase();
   return NAMED[e.code] ?? e.code.replace(/^(Key|Digit)/, '').replace(/^Numpad/, 'Num ');
 }
+
+const FIELDS = ['code', 'ctrl', 'meta', 'alt', 'shift'];
+
+/** What an install starts with. Nothing is stored until it's changed. */
+export const defaultShortcut = (isMac) => ({ code: 'KeyK', label: 'K', ctrl: !isMac, meta: isMac, alt: false, shift: false });
+
+export const same = (a, b) => FIELDS.every((field) => a[field] === b[field]);
 
 /** The combo held in a keydown. `code` is empty while only modifiers are down. */
 export function fromEvent(e) {

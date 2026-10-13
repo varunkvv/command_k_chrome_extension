@@ -17,11 +17,11 @@
       <div class="card">
         <section>
           <h2>Shortcut</h2>
-          <p>Pick the keys that open and close the bar.</p>
+          <p>The keys that open and close the bar.</p>
           <button id="recorder" class="recorder" type="button" aria-describedby="status"></button>
           <div class="under">
             <p id="status" class="status" role="status"></p>
-            <button id="remove" class="btn quiet" type="button" hidden>Remove</button>
+            <button id="reset" class="btn quiet" type="button" hidden>Reset to default</button>
             <button id="cancel" class="btn" type="button" hidden>Cancel</button>
             <button id="save" class="btn primary" type="button" hidden>Save</button>
           </div>
@@ -29,10 +29,10 @@
         <section class="split">
           <div>
             <h2>Browser shortcut</h2>
-            <p>Kept by the browser, so it also works on new tabs and settings pages, where an extension can't listen for keys. Only the browser can change it.</p>
+            <p>Optional. An extension can't hear keys on new tabs, browser settings pages or while the address bar has focus. A shortcut set in the browser works there too.</p>
           </div>
           <kbd id="browser-keys" class="kbd"></kbd>
-          <button id="browser-change" class="btn" type="button">Change</button>
+          <button id="browser-change" class="btn" type="button">Set</button>
         </section>
       </div>
     </main>

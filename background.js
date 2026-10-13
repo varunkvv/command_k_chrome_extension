@@ -1,19 +1,10 @@
-// Opens the command bar from the shortcut or the toolbar icon. The preferred
-// surface is an overlay injected into the active tab. Pages that can't be
-// scripted (chrome://, the web store, the new tab page) fall back to the
-// toolbar popup, then to a small standalone window.
+// Opens the command bar from the shortcut or the toolbar icon. hotkey.js hears
+// the shortcut on the page, and the browser hears its own if one is set. The
+// preferred surface is an overlay injected into the active tab. Pages that
+// can't be scripted (chrome://, the web store, the new tab page) fall back to
+// the toolbar popup, then to a small standalone window.
 
 const surfaces = new Set();
-const ALL_SITES = { origins: ['<all_urls>'] };
-const HOTKEY = {
-  id: 'cmdk-hotkey',
-  js: ['hotkey.js'],
-  matches: ['<all_urls>'],
-  allFrames: true,
-  matchOriginAsFallback: true,
-  runAt: 'document_start',
-};
-let syncing = Promise.resolve();
 
 chrome.commands.onCommand.addListener((command, tab) => {
   if (command === 'toggle-palette') toggle(tab);
@@ -33,39 +24,15 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
   else if (msg?.type === 'cmdk:hotkey') toggle(sender.tab);
 });
 
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'local' && changes.shortcut) syncHotkey();
+// hotkey.js is a declared content script, which only reaches pages loaded
+// after an install or update. This covers the tabs that are already open.
+chrome.runtime.onInstalled.addListener(async () => {
+  // an earlier build registered it at runtime instead
+  chrome.scripting.unregisterContentScripts().catch(() => {});
+  for (const tab of await chrome.tabs.query({})) {
+    chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: ['hotkey.js'] }).catch(() => {});
+  }
 });
-chrome.permissions.onAdded.addListener(() => syncHotkey());
-chrome.permissions.onRemoved.addListener(() => syncHotkey());
-// an update orphans the copies already running in open tabs
-chrome.runtime.onInstalled.addListener(() => syncHotkey({ reinject: true }));
-syncHotkey();
-
-// The browser won't let an extension rebind its own command, so a custom
-// shortcut is a key listener on every page. It is registered only while a
-// shortcut is set and the user has granted access to all sites for it.
-function syncHotkey({ reinject = false } = {}) {
-  // one at a time, the events above arrive in bursts
-  syncing = syncing
-    .then(async () => {
-      const { shortcut } = await chrome.storage.local.get('shortcut');
-      const wanted = !!shortcut && (await chrome.permissions.contains(ALL_SITES));
-      const [registered] = await chrome.scripting.getRegisteredContentScripts({ ids: [HOTKEY.id] });
-      if (!wanted) {
-        if (registered) await chrome.scripting.unregisterContentScripts({ ids: [HOTKEY.id] });
-        return;
-      }
-      if (!registered) await chrome.scripting.registerContentScripts([HOTKEY]);
-      else if (!reinject) return;
-      // a registered script only reaches pages loaded from now on
-      for (const tab of await chrome.tabs.query({})) {
-        chrome.scripting.executeScript({ target: { tabId: tab.id, allFrames: true }, files: HOTKEY.js }).catch(() => {});
-      }
-    })
-    .catch((err) => console.warn('[command k]', err));
-  return syncing;
-}
 
 // The overlay iframe is web accessible, so any page could embed it. It only
 // renders when handed this per-session token, which pages never see.
